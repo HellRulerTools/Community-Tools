@@ -237,6 +237,8 @@
 (() => {
   'use strict';
   // the tool catalogue — add a tool here and it gets a page + nav automatically
+  // bump VERSION whenever a tool file changes so the iframe fetches fresh instead of a cached copy
+  const VERSION = '2026-10-25a';
   const TOOLS = {
     planner: { name: 'Tree Planner', file: 'planner.html' },
     skills: { name: 'Skill Planner', file: 'skill-planner.html' },
@@ -253,9 +255,10 @@
     const tool = TOOLS[hash];
     document.querySelectorAll('.nav a.link').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + hash));
     if (tool) {
+      const url = tool.file + '?v=' + VERSION;   // cache-bust so a redeploy always loads fresh
       $('toolname').textContent = tool.name;
-      $('toolpop').href = tool.file;
-      if (frame.getAttribute('src') !== tool.file) frame.setAttribute('src', tool.file);
+      $('toolpop').href = url;
+      if (frame.getAttribute('src') !== url) frame.setAttribute('src', url);
       home.classList.remove('on'); view.classList.add('on');
       document.title = tool.name + ' — Shiftage Community Tools';
       lastShown = 'tool';
