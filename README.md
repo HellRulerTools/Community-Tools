@@ -11,14 +11,24 @@ Hellruler is a browser ARPG about descending ever deeper into hell — levelling
 sprawling passive tree, stacking runes and skills, and prestiging to push further than the last run.
 These tools help plan that climb outside the game. They are unofficial and non-commercial.
 
+## Import and export
+
+The thread tying these tools together: pull a build out of the game, work on it here, then take it back
+in. Hellruler's own BUILD CODE already carries gear, skills, tree and path, and the aim is for every tool
+to read and write it. Anything deeper (an API or a console export) will only happen with the devs' blessing.
+
 ## Tools
 
-| Tool | What it does |
-| --- | --- |
-| **Tree Planner** | Plan the passive tree with the game's node art, route to any node, pick your altar ascendancy and notables, and lay out prestige. Builds share via a code. |
-| **Skill Planner** | Browse every active rune and support, and build skill groups like in game — socket an active and add supports, with only compatible runes offered at each socket. |
+| Tool | Status | What it does |
+| --- | --- | --- |
+| **Tree Planner** | Live | Plan the passive tree with the game's node art, route to any node, pick your altar ascendancy and notables, and lay out prestige. Builds share via a code. |
+| **Skill Planner** | Live | Browse every active rune and support, and build skill groups like in game — socket an active and add supports, with only compatible runes offered at each socket. |
+| **Build Code Import/Export** | In progress | Read what a BUILD CODE holds and build a fresh one from your plan to paste back into the game. |
+| **Equipment Check** | Planned | Score a loadout's real DPS and per-type effective HP with the game's own damage code. |
+| **DPS Tester** | Planned | Run a build through simulated floor fights and see how it holds up. |
+| **Defence Breakdown** | Planned | See the biggest hit you survive per damage type and where armour, resists and barrier help. |
 
-More tools are planned (a loot filter helper and a rune reference are next).
+Got an idea or a request? Tell Shiftage what would help and it can join the backlog.
 
 ## How the site is built
 

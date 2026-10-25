@@ -72,8 +72,26 @@
   .tool .open { align-self: flex-start; padding: 9px 16px; background: var(--panel2); border: 1px solid var(--line);
     border-radius: 4px; color: var(--text); font: 600 14px var(--sans); }
   .tool:hover .open { border-color: var(--ember); color: var(--bone); }
-  .soon { opacity: 0.6; }
-  .soon .open { pointer-events: none; color: var(--muted); }
+  /* status badge, top-right of each card */
+  .tool { position: relative; }
+  .tool .status { position: absolute; top: 16px; right: 16px; font: 600 10.5px var(--sans); letter-spacing: 0.6px;
+    padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); }
+  .tool.live .status { color: #86c07a; border-color: #3c5a37; }
+  .tool.wip .status { color: var(--ember); border-color: var(--ember-deep); }
+  .tool.plan { opacity: 0.72; }
+  .tool.plan .open { pointer-events: none; color: var(--muted); background: transparent; }
+  .tool.plan:hover { border-color: var(--line); box-shadow: none; }
+  .tool .tag { padding-right: 70px; }
+
+  /* ---- import/export band ---- */
+  .band { background: linear-gradient(180deg, rgba(232,163,61,0.07), rgba(232,163,61,0)); border: 1px solid var(--line);
+    border-left: 3px solid var(--ember); border-radius: 8px; padding: 22px 24px; margin: 0 0 8px;
+    display: grid; grid-template-columns: 1fr auto; gap: 18px 28px; align-items: center; }
+  .band h2 { font: 600 20px var(--serif); color: var(--bone); margin: 0 0 6px; }
+  .band p { color: var(--text); font-size: 14.5px; margin: 0; max-width: 64ch; }
+  .band .flow { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .band .flow b { color: var(--ember); font-weight: 600; }
+  @media (max-width: 680px) { .band { grid-template-columns: 1fr; } .band .flow { white-space: normal; } }
 
   footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 13px;
     padding: 26px clamp(16px, 4vw, 40px); max-width: 1080px; margin: 0 auto; }
@@ -110,23 +128,36 @@
 <!-- ===== HOME ===== -->
 <div class="page" id="page-home">
   <header class="hero">
-    <p class="eyebrow">Community build-crafting for Hellruler</p>
-    <h1>Theorycraft your Hellruler build before you spend a point.</h1>
+    <p class="eyebrow">Community toolbox for Hellruler</p>
+    <h1>A growing toolbox for planning your Hellruler climb.</h1>
     <p>Hellruler is a free browser ARPG about descending ever deeper into hell — levelling a hero, shaping a sprawling
       passive tree, stacking runes and skills, and prestiging to push further than the last run. These are unofficial
-      community tools for planning that climb outside the game.</p>
-    <a class="cta" href="#planner">Open the Tree Planner</a>
+      community tools for working on that build outside the game: plan it, test it, then take it back in. New tools
+      land here as they're built.</p>
+    <a class="cta" href="#tools">Browse the tools</a>
     <span class="ext">New to the game? <a href="https://hellruler.com" target="_blank" rel="noopener">Play Hellruler</a></span>
   </header>
 
-  <main class="wrap">
+  <main class="wrap" id="tools">
+    <div class="band">
+      <div>
+        <h2>Import and export your build</h2>
+        <p>The thread that ties these tools together: pull a build out of the game, work on it here, then take it back
+          in. Hellruler's own BUILD CODE already carries gear, skills, tree and path — the goal is for every tool to
+          read and write it, so your real character flows in and your plan flows back out. Anything deeper (an API or a
+          console export) will only happen with the devs' blessing.</p>
+      </div>
+      <div class="flow"><b>Game</b> → tool → <b>Game</b></div>
+    </div>
+
     <div class="sec-head">
       <h2>Tools</h2>
       <span class="count" id="toolcount"></span>
     </div>
 
-    <div class="tools" id="tools">
-      <article class="tool">
+    <div class="tools">
+      <article class="tool live">
+        <span class="status">Live</span>
         <span class="tag">Planner</span>
         <h3>Tree Planner</h3>
         <p>Plan your passive tree with the game's own node art, map the cheapest route to any node, pick your altar
@@ -134,7 +165,8 @@
         <a class="open" href="#planner">Open planner</a>
       </article>
 
-      <article class="tool">
+      <article class="tool live">
+        <span class="status">Live</span>
         <span class="tag">Planner</span>
         <h3>Skill Planner</h3>
         <p>Browse every active rune and support, then build skill groups like in game — socket an active and add
@@ -142,14 +174,47 @@
         <a class="open" href="#skills">Open planner</a>
       </article>
 
-      <article class="tool soon" aria-disabled="true">
-        <span class="tag">Coming soon</span>
-        <h3>More on the way</h3>
-        <p>This is the home for Shiftage's Hellruler tools. New ones drop in here as they're built — a loot filter
-          helper and a rune reference are next on the bench.</p>
-        <span class="open">Not yet</span>
+      <article class="tool wip">
+        <span class="status">In progress</span>
+        <span class="tag">Import / Export</span>
+        <h3>Build Code Import/Export</h3>
+        <p>Paste a BUILD CODE to read exactly what it holds — gear, skill groups, tree and path — and build a fresh
+          code from your plan to paste back into the game. The engine for this already round-trips real codes; wiring it
+          into a page is next.</p>
+        <span class="open">In progress</span>
+      </article>
+
+      <article class="tool plan">
+        <span class="status">Planned</span>
+        <span class="tag">Analysis</span>
+        <h3>Equipment Check</h3>
+        <p>Drop in a loadout and see its real DPS and per-type effective HP, scored with the game's own damage code —
+          armour, resists and caps, barrier and item effects all counted. Spot the resist hole before the floor boss
+          finds it.</p>
+        <span class="open">On the bench</span>
+      </article>
+
+      <article class="tool plan">
+        <span class="status">Planned</span>
+        <span class="tag">Analysis</span>
+        <h3>DPS Tester</h3>
+        <p>Run a build through simulated floor fights on the game engine and watch how it holds up — damage dealt,
+          lowest life reached, and what killed you when it did. A sandbox for "would this actually survive depth X?"</p>
+        <span class="open">On the bench</span>
+      </article>
+
+      <article class="tool plan">
+        <span class="status">Planned</span>
+        <span class="tag">Analysis</span>
+        <h3>Defence Breakdown</h3>
+        <p>A clear read on how much punishment a build takes: the biggest single hit you survive per damage type, and
+          where armour, resists and barrier are pulling their weight — or leaving a gap.</p>
+        <span class="open">On the bench</span>
       </article>
     </div>
+
+    <p class="count" style="margin-top:22px">Got an idea or a request? These are built from things players actually
+      use — tell Shiftage what would help and it can join the backlog.</p>
   </main>
 
   <footer>
@@ -178,12 +243,14 @@
   };
   const $ = id => document.getElementById(id);
   const home = $('page-home'), view = $('toolview'), frame = $('toolframe');
-  $('toolcount').textContent = Object.keys(TOOLS).length + (Object.keys(TOOLS).length === 1 ? ' tool, more soon' : ' tools');
+  // count reflects live tools plus what's on the way, so the toolbox reads as growing
+  const liveCount = Object.keys(TOOLS).length;
+  $('toolcount').textContent = `${liveCount} live, more in progress`;
 
+  let lastShown = null;   // 'home' | 'tool' — so we only reset scroll when actually leaving a tool
   function route() {
     const hash = (location.hash.replace('#', '') || 'home').toLowerCase();
     const tool = TOOLS[hash];
-    // nav highlight
     document.querySelectorAll('.nav a.link').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + hash));
     if (tool) {
       $('toolname').textContent = tool.name;
@@ -191,11 +258,16 @@
       if (frame.getAttribute('src') !== tool.file) frame.setAttribute('src', tool.file);
       home.classList.remove('on'); view.classList.add('on');
       document.title = tool.name + ' — Shiftage Community Tools';
+      lastShown = 'tool';
     } else {
+      const leavingTool = lastShown === 'tool';
       view.classList.remove('on'); home.classList.add('on');
-      frame.removeAttribute('src');   // free the 1.9 MB planner when you leave it
+      frame.removeAttribute('src');   // free the big planner when you leave it
       document.title = 'Shiftage Community Tools — Hellruler';
-      window.scrollTo(0, 0);
+      // #tools is an in-page anchor, not a tool: let the browser scroll to it; only reset when leaving a tool
+      if (hash === 'tools') $('tools').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else if (leavingTool || hash === 'home') window.scrollTo(0, 0);
+      lastShown = 'home';
     }
   }
   $('backbtn').onclick = () => { location.hash = '#home'; };
