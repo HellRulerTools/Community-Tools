@@ -1,25 +1,31 @@
-# Hellruler Community Tools
+# Shiftage Community Tools — Hellruler
 
-A community-made passive tree + skill planner for Hellruler.
+A home for community-made, unofficial tools for the free browser ARPG
+[Hellruler](https://hellruler.com).
 
-**Open the planner:** https://hellrulertools.github.io/Community-Tools/
+**Open the site:** https://hellrulertools.github.io/Community-Tools/
 
-## What it does
+## About the game
 
-- Browse the full passive tree with the game's node icons, plan routes from your start, and see what your tree gives.
-- **Altar tab** — pick one of your start's ascendancy ways and choose its notables.
-- **Prestige tab** — plan prestige steps and see points earned by depth cleared.
-- **Skills tab** — searchable table of every active, support, aura and curse.
-- Share a build with the code box (it round-trips through the URL too).
+Hellruler is a browser ARPG about descending ever deeper into hell — levelling a hero, shaping a
+sprawling passive tree, stacking runes and skills, and prestiging to push further than the last run.
+These tools help plan that climb outside the game. They are unofficial and non-commercial.
 
-The site is a single self-contained HTML file — no account, no server, works offline once loaded.
+## Tools
 
-## Updating the data
+| Tool | What it does |
+| --- | --- |
+| **Tree Planner** | Plan the passive tree with the game's node art, route to any node, pick your altar ascendancy and notables, lay out prestige, and search every skill. Builds share via a code. |
 
-The planner is generated from the current game build. To refresh after a patch, regenerate
-`tree-planner.html` and copy it here as `index.html`.
+More tools are planned (a loot filter helper and a rune reference are next).
+
+## How the site is built
+
+A single hub (`index.html`) with hash-based page navigation, ready for more tools. Each tool is its own
+self-contained HTML file loaded in the hub; `planner.html` is generated from the current game build —
+regenerate it and replace the file to update.
 
 ## Credit
 
 Hellruler and its art and data belong to the game's developers. This is an unofficial, non-commercial
-community tool.
+community project by Shiftage.
