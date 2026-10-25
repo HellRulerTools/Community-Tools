@@ -15,7 +15,8 @@ These tools help plan that climb outside the game. They are unofficial and non-c
 
 | Tool | What it does |
 | --- | --- |
-| **Tree Planner** | Plan the passive tree with the game's node art, route to any node, pick your altar ascendancy and notables, lay out prestige, and search every skill. Builds share via a code. |
+| **Tree Planner** | Plan the passive tree with the game's node art, route to any node, pick your altar ascendancy and notables, and lay out prestige. Builds share via a code. |
+| **Skill Planner** | Browse every active rune and support, and build skill groups like in game — socket an active and add supports, with only compatible runes offered at each socket. |
 
 More tools are planned (a loot filter helper and a rune reference are next).
 
