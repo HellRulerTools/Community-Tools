@@ -218,10 +218,10 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const PREFIX = 'HELLRULER1:';
 const fmtBig = n => n >= 1e9 ? (n / 1e9).toFixed(2) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(Math.round(n));
 const START = { reaver: 'Warrior', sellsword: 'Fencer', dancer: 'Archer', stormcaller: 'Assassin', pyromancer: 'Mage', bulwark: 'Paladin', frostwitch: 'Wanderer' };
-// gear laid out down each flank, like the game screen
-const LEFT_SLOTS = ['mainhand', 'helm', 'chest', 'gloves', 'bracers', 'legs', 'boots'];
-const RIGHT_SLOTS = ['offhand', 'amulet', 'ring1', 'ring2', 'belt', 'trinket1', 'trinket2'];
-const SLOT_LABEL = { mainhand: 'Weapon', offhand: 'Off-hand', helm: 'Helm', chest: 'Chest', gloves: 'Gloves', bracers: 'Bracers', legs: 'Legs', boots: 'Boots', belt: 'Belt', amulet: 'Amulet', ring1: 'Ring', ring2: 'Ring', trinket1: 'Trinket', trinket2: 'Trinket' };
+// gear laid out down each flank, matching the in-game paper-doll order
+const LEFT_SLOTS = ['helm', 'chest', 'bracers', 'gloves', 'legs', 'boots', 'mainhand', 'lifeFlask', 'elixir1'];
+const RIGHT_SLOTS = ['amulet', 'belt', 'ring1', 'ring2', 'trinket1', 'trinket2', 'offhand', 'manaFlask', 'elixir2'];
+const SLOT_LABEL = { mainhand: 'Weapon', offhand: 'Off-hand', helm: 'Helm', chest: 'Chest', gloves: 'Gloves', bracers: 'Bracers', legs: 'Legs', boots: 'Boots', belt: 'Belt', amulet: 'Amulet', ring1: 'Ring', ring2: 'Ring', trinket1: 'Trinket', trinket2: 'Trinket', lifeFlask: 'Life flask', manaFlask: 'Mana flask', elixir1: 'Elixir', elixir2: 'Elixir' };
 
 let E = null, STATE = null, UPGRADE = null;
 
