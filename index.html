@@ -122,6 +122,7 @@
   <a class="brand" href="#home"><span class="mk">◆</span> Shiftage Community Tools <span class="sub">for Hellruler</span></a>
   <a class="link" data-nav href="#home">Home</a>
   <a class="link" data-nav href="#build">Build Planner</a>
+  <a class="link" data-nav href="#equip">Equipment Check</a>
   <a class="link" data-nav href="#prestige">Prestige Planner</a>
 </nav>
 
@@ -175,14 +176,14 @@
         <a class="open" href="#prestige">Open prestige planner</a>
       </article>
 
-      <article class="tool plan">
-        <span class="status">Planned</span>
+      <article class="tool live">
+        <span class="status">Live</span>
         <span class="tag">Analysis</span>
         <h3>Equipment Check</h3>
-        <p>Drop in a loadout and see its real DPS and per-type effective HP, scored with the game's own damage code —
-          armour, resists and caps, barrier and item effects all counted. Spot the resist hole before the floor boss
-          finds it.</p>
-        <span class="open">On the bench</span>
+        <p>Capture your character with the bookmarklet and see a full stat sheet — real DPS, life, barrier, armour and
+          resists, scored on the game's own engine in your browser. Then find the best gear in your bag and get an
+          equip code to paste back in.</p>
+        <a class="open" href="#equip">Open equipment check</a>
       </article>
 
       <article class="tool plan">
@@ -229,10 +230,11 @@
   'use strict';
   // the tool catalogue — add a tool here and it gets a page + nav automatically
   // bump VERSION whenever a tool file changes so the iframe fetches fresh instead of a cached copy
-  const VERSION = '2026-10-25e';
+  const VERSION = '2026-10-25f';
   const TOOLS = {
     build: { name: 'Build Planner', file: 'build-planner.html' },
     prestige: { name: 'Prestige Planner', file: 'prestige-planner.html' },
+    equip: { name: 'Equipment Check', file: 'equipment-check.html' },
     // old tools kept reachable; superseded by Build Planner
     planner: { name: 'Tree Planner', file: 'planner.html' },
     skills: { name: 'Skill Planner', file: 'skill-planner.html' },

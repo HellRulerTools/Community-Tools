@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hellruler equipment check</title>
+<style>
+  :root {
+    --soot: #1b1512; --soot2: #15100e; --panel: #241c18; --panel2: #2d231e; --line: #3d302a;
+    --bone: #efe3cf; --text: #e9dfd2; --muted: #a8978a; --ember: #e8a33d; --ember-deep: #c6721f; --warn: #e0674f; --ok: #86c07a;
+    --fire: #e0674f; --cold: #4fa3c0; --lightning: #d7b23a; --chaos: #9b5fa8; --phys: #c9b8a6;
+    --serif: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+    --sans: "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--soot); color: var(--text); font: 15px/1.5 var(--sans); }
+  a { color: var(--ember); } button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--ember); outline-offset: 1px; }
+  .top { display: flex; align-items: center; gap: 14px; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .top h1 { font: 600 19px var(--serif); color: var(--bone); margin: 0; }
+  .top .tag { margin-left: auto; font: 600 11px var(--sans); color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 3px 10px; }
+  .top .tag.ok { color: var(--ok); border-color: #3c5a37; } .top .tag.bad { color: var(--warn); border-color: #5a332c; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 20px; }
+  .panel { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; }
+  .panel h2 { font: 600 16px var(--serif); color: var(--bone); margin: 0 0 4px; } .panel p.sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  textarea { width: 100%; height: 72px; background: var(--soot); color: var(--text); border: 1px solid var(--line); border-radius: 3px; padding: 8px; font: 12px ui-monospace, Consolas, monospace; resize: vertical; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  button.b { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 7px 14px; font: 600 13px var(--sans); cursor: pointer; } button.b:hover { border-color: var(--ember); color: var(--bone); }
+  button.b.primary { background: var(--ember); color: #241404; border-color: var(--ember); } button.b.primary:hover { background: #f4b457; }
+  .msg { font-size: 13px; margin-top: 8px; } .msg.warn { color: var(--warn); } .msg.ok { color: var(--ok); }
+  .bm { display: inline-block; background: var(--ember); color: #241404; font-weight: 700; padding: 6px 12px; border-radius: 4px; text-decoration: none; cursor: grab; }
+  .hide { display: none !important; }
+
+  /* stat sheet */
+  .sheet { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+  @media (max-width: 820px) { .sheet { grid-template-columns: 1fr; } }
+  .hero-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .hero-head .nm { font: 600 22px var(--serif); color: var(--bone); } .hero-head .cls { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 18px; margin-top: 6px; }
+  .stat { display: flex; justify-content: space-between; border-bottom: 1px solid #2c221d; padding: 4px 0; }
+  .stat .l { color: var(--muted); } .stat .v { color: var(--bone); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .big { font: 600 30px var(--serif); color: var(--bone); font-variant-numeric: tabular-nums; } .big small { font: 13px var(--sans); color: var(--muted); }
+  .res { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .rchip { flex: 1; min-width: 70px; text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 8px 4px; }
+  .rchip .rv { font: 600 18px var(--sans); } .rchip .rl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .rchip.fire .rv { color: var(--fire); } .rchip.cold .rv { color: var(--cold); } .rchip.lightning .rv { color: var(--lightning); } .rchip.chaos .rv { color: var(--chaos); }
+  .rchip.low { border-color: var(--warn); } .rchip.low .rv { color: var(--warn); }
+  .slots { margin-top: 6px; } .slot { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid #2c221d; padding: 5px 0; font-size: 13px; }
+  .slot .sn { color: var(--muted); text-transform: capitalize; } .slot .si { color: var(--bone); text-align: right; }
+  .slot .si .rar { font-size: 11px; }
+  .rar.legendary { color: #e8a33d; } .rar.unique { color: #c86a3a; } .rar.mythic { color: #9b5fa8; } .rar.ancient { color: #4fa3c0; } .rar.rare { color: #d7b23a; } .rar.uncommon { color: #5c9a55; } .rar.common { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Equipment check</h1>
+  <span class="tag" id="enginetag">engine: loading…</span>
+</div>
+
+<div class="wrap">
+  <div class="panel" id="loadpanel">
+    <h2>Load your character</h2>
+    <p class="sub">Capture your live character and bag from the game page with the bookmarklet, then paste it here.
+      This stays in your browser. (A build code sets the tree &amp; skills; the capture provides your actual gear and bag.)</p>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 8px">
+      <b>1.</b> Drag this to your bookmarks bar: <a class="bm" id="bmlink" href="#">Grab Hellruler bag</a>
+      &nbsp; <b>2.</b> Open the game, click the bookmark, come back and paste below.
+    </p>
+    <textarea id="statebox" placeholder='Paste the captured data (or a HELLRULER1:… build code to preview tree + skills only)'></textarea>
+    <div class="btns">
+      <button class="b primary" id="loadbtn">Check this character</button>
+      <button class="b" id="samplebtn">Load a sample</button>
+    </div>
+    <div class="msg" id="loadmsg"></div>
+  </div>
+
+  <div class="panel hide" id="sheetpanel">
+    <div class="hero-head">
+      <span class="nm" id="heroname"></span>
+      <span class="cls" id="heroclass"></span>
+    </div>
+    <div class="sheet">
+      <div>
+        <div class="big" id="dps"></div>
+        <div class="grid" id="offgrid"></div>
+        <h2 style="margin-top:16px">Defence</h2>
+        <div class="grid" id="defgrid"></div>
+        <div class="res" id="resrow"></div>
+      </div>
+      <div>
+        <h2>Equipped</h2>
+        <div class="slots" id="slots"></div>
+      </div>
+    </div>
+    <div class="btns" style="margin-top:16px">
+      <button class="b primary" id="findbtn">Find upgrades in my bag</button>
+      <button class="b" id="recheck">Load a different character</button>
+    </div>
+    <div class="msg" id="findmsg"></div>
+    <div id="upgrade" class="hide"></div>
+  </div>
+</div>
+
+<script type="module">
+import { loadBrowserEngine } from './engine-loader.js';
+import { findUpgrade } from './evaluator.js';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const PREFIX = 'HELLRULER1:';
+const SLOT_ORDER = ['mainhand', 'offhand', 'helm', 'chest', 'gloves', 'bracers', 'legs', 'boots', 'belt', 'amulet', 'ring1', 'ring2', 'trinket1', 'trinket2'];
+const fmtBig = n => n >= 1e9 ? (n / 1e9).toFixed(2) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(Math.round(n));
+
+let E = null;
+(async () => {
+  try {
+    E = await loadBrowserEngine((d, t) => { $('enginetag').textContent = `engine: loading ${d}/${t}`; });
+    $('enginetag').textContent = `engine: ${E.build} · ${E.treeId}`;
+    $('enginetag').className = 'tag ok';
+  } catch (e) {
+    $('enginetag').textContent = 'engine failed';
+    $('enginetag').className = 'tag bad';
+    $('loadmsg').className = 'msg warn';
+    $('loadmsg').textContent = 'The engine could not load: ' + e.message;
+  }
+})();
+
+// ---- bookmarklet: read the game's live state and copy it to the clipboard ----
+// quick + dirty placeholder until a dev-provided export exists. Reads the store the game keeps in memory.
+// The game keeps its state in a module closure (not on window or localStorage), so we reach it the way
+// React does: walk the fiber tree from #root and find the hook state that carries equipment+inventory+hero.
+// Verified on the live page — finds it within ~40 fibers. Read-only; copies a slimmed snapshot.
+const BM = `(function(){try{
+function froot(){var h=document.getElementById('root')||document.body.firstElementChild||document.body;var k=Object.keys(h).find(function(x){return x.indexOf('__reactContainer$')===0||x.indexOf('__reactFiber$')===0;});return k?h[k]:null;}
+function ok(o){return o&&typeof o==='object'&&o.equipment&&o.inventory&&o.hero;}
+function find(){var r=froot();if(!r)return null;var seen=new Set(),q=[r],n=0;while(q.length&&n<20000){var f=q.shift();if(!f||seen.has(f)){continue;}seen.add(f);n++;var h=f.memoizedState,hops=0;while(h&&hops<40){var ms=h.memoizedState;if(ok(ms))return ms;if(ms&&typeof ms==='object'){for(var kk in ms){try{if(ok(ms[kk]))return ms[kk];}catch(e){}}}h=h.next;hops++;}if(ok(f.memoizedProps))return f.memoizedProps;if(f.child)q.push(f.child);if(f.sibling)q.push(f.sibling);}return null;}
+var s=find();
+if(!s){alert('Could not find the game state. Open Hellruler to the play screen, then click this again.');return;}
+var keep={name:s.name,equipment:s.equipment,inventory:s.inventory,hero:s.hero,maxDepth:s.maxDepth,depth:s.depth,stance:s.stance,fires:s.fires,nextUid:s.nextUid};
+var txt=JSON.stringify(keep);
+function done(){alert('Hellruler bag copied ('+(keep.inventory||[]).length+' items). Paste it into Equipment Check.');}
+if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,function(){var t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();});}else{var t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();}
+}catch(e){alert('Capture failed: '+e.message);}})();`;
+$('bmlink').href = 'javascript:' + encodeURIComponent(BM);
+
+$('loadbtn').onclick = () => load($('statebox').value);
+$('recheck').onclick = () => { $('sheetpanel').classList.add('hide'); $('loadpanel').classList.remove('hide'); $('upgrade').classList.add('hide'); };
+$('findbtn').onclick = () => findUpgrades();
+$('samplebtn').onclick = async () => {
+  try { const s = await fetch('equipment-check.sample.json').then(r => r.ok ? r.json() : null); if (s) { $('statebox').value = JSON.stringify(s); load(s); } else { msg('No sample bundled.', true); } }
+  catch { msg('No sample bundled.', true); }
+};
+function msg(t, warn) { $('loadmsg').className = 'msg' + (warn ? ' warn' : ' ok'); $('loadmsg').textContent = t; }
+
+let STATE = null;
+function load(input) {
+  if (!E) { msg('Engine still loading — try again in a moment.', true); return; }
+  let state;
+  try {
+    const t = typeof input === 'string' ? input.trim() : input;
+    if (typeof t === 'string' && t.startsWith(PREFIX)) { msg('That is a build code (tree + skills only). Equipment Check needs a captured character to show gear stats — use the bookmarklet.', true); return; }
+    state = typeof t === 'string' ? JSON.parse(t) : t;
+  } catch (e) { msg('Could not read that — paste the captured data from the bookmarklet.', true); return; }
+  if (!state || !state.equipment || !state.hero) { msg('That data has no equipment/hero. Capture again on the game screen.', true); return; }
+  STATE = state;
+  try { renderSheet(state); msg('', false); $('loadpanel').classList.add('hide'); $('sheetpanel').classList.remove('hide'); }
+  catch (e) { msg('Could not compute stats: ' + e.message, true); }
+}
+
+function renderSheet(state) {
+  const kit = E.kitOf(state);
+  const k = kit(state.equipment);
+  const s = k.stats;
+  const START = { reaver: 'Warrior', sellsword: 'Fencer', dancer: 'Archer', stormcaller: 'Assassin', pyromancer: 'Mage', bulwark: 'Paladin', frostwitch: 'Wanderer' };
+  $('heroname').textContent = state.name || 'Your character';
+  $('heroclass').textContent = `${START[state.hero.start] || state.hero.start || ''}${state.maxDepth ? ' · depth ' + state.maxDepth : ''}${state.stance ? ' · ' + state.stance : ''}`;
+
+  // offence
+  let off = 0; try { off = E.evalLoadout(state.equipment, { maxDepth: state.maxDepth, kit }).off || 0; } catch {}
+  $('dps').innerHTML = `${fmtBig(off)} <small>skill DPS (sheet)</small>`;
+  const mainSkillObj = (k.skills || []).find(x => x.gem);
+  const mainSkill = mainSkillObj?.gem;
+  const hasTag = (o, t) => { const g = o && o.tags; if (!g) return false; if (typeof g.has === 'function') return g.has(t); if (Array.isArray(g)) return g.includes(t); return false; };
+  const isSpell = hasTag(mainSkillObj, 'spell');
+  const pct = v => (v == null ? '—' : (Math.round(v * 10) / 10) + '%');
+  const rateVal = isSpell ? s.castSpeed : s.attackSpeed;
+  $('offgrid').innerHTML = row('Main skill', mainSkill ? (mainSkill.name || mainSkill.id) : '—')
+    + row(isSpell ? 'Cast speed' : 'Attack speed', rateVal ? ('+' + Math.round(rateVal) + '%') : '—')
+    + row('Crit chance', pct(isSpell ? s.critSpell : s.critChance))
+    + row('Crit damage', '+' + Math.round((isSpell ? s.critSpellDamage : s.critDamage) || 0) + '%');
+
+  // defence
+  $('defgrid').innerHTML = row('Life', fmtBig(s.hp || 0)) + row('Barrier', fmtBig(s.barrier || 0))
+    + row('Armour', fmtBig(s.armor || 0))
+    + row('Block', Math.round(s.block || 0) + '%' + (s.dodge ? ` · ${Math.round(s.dodge)}% dodge` : ''));
+  const RES = [['fire', 'fireRes'], ['cold', 'coldRes'], ['lightning', 'lightRes'], ['chaos', 'chaosRes']];
+  $('resrow').innerHTML = RES.map(([c, key]) => {
+    const v = Math.round(s[key] || 0);
+    return `<div class="rchip ${c}${v < 55 ? ' low' : ''}"><div class="rv">${v}%</div><div class="rl">${c}</div></div>`;
+  }).join('');
+
+  // equipped
+  $('slots').innerHTML = SLOT_ORDER.map(slot => {
+    const it = state.equipment[slot];
+    if (!it) return `<div class="slot"><span class="sn">${slot.replace(/\d$/, '')}</span><span class="si" style="color:var(--muted)">—</span></div>`;
+    return `<div class="slot"><span class="sn">${slot.replace(/(\d)$/, ' $1')}</span><span class="si">${esc(it.name)} <span class="rar ${esc(it.rarity || 'common')}">${esc(it.rarity || '')}</span></span></div>`;
+  }).join('');
+}
+const row = (l, v) => `<div class="stat"><span class="l">${esc(l)}</span><span class="v">${esc(v)}</span></div>`;
+
+// ---- find upgrade: fight-free policy search over the bag ----
+const PREFIX2 = 'HELLRULER1:';
+const b64u = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+function equipCode(state, equipment) {
+  // a game code carrying the hero (so tree/skills are preserved) with the new equipment as pieces.
+  // pieces mirror the game's shape: [slot, uid, name, base, rarityIndex, quality, ilvl, power, prismatic, implicits, affixes]
+  const RAR = ['common', 'uncommon', 'rare', 'mythic', 'legendary', 'ancient', 'unique'];
+  const SLOT_ALL = ['mainhand', 'offhand', 'helm', 'chest', 'gloves', 'bracers', 'legs', 'boots', 'belt', 'amulet', 'ring1', 'ring2', 'trinket1', 'trinket2', 'lifeFlask', 'manaFlask', 'elixir1', 'elixir2'];
+  const pieces = [];
+  for (const slot of SLOT_ALL) {
+    const it = equipment[slot]; if (!it) continue;
+    pieces.push([slot, it.uid, it.name, it.base, Math.max(0, RAR.indexOf(it.rarity || 'common')), it.quality || 0, it.ilvl || it.depth || 0, it.power || '', it.prismatic ? 1 : 0,
+      (it.implicit || []).map(a => [a.id, a.value ?? a.val]), (it.affixes || []).map(a => [a.id, a.value ?? a.val])]);
+  }
+  const h = state.hero || {};
+  const hero = { start: h.start, ascendancy: h.ascendancy ?? null, ascendNodes: h.ascendNodes || [], passives: h.passives || [], passivesTable: h.passivesTable, masteries: h.masteries || {}, groups: (h.groups || []).map(g => ({ gem: g.gem ?? null, supports: (g.supports || []).slice(0, 5) })) };
+  return PREFIX2 + b64u(JSON.stringify({ v: 1, n: (state.name || 'Upgraded') + ' gear', p: pieces, h: hero }));
+}
+async function findUpgrades() {
+  if (!E || !STATE) return;
+  const fm = $('findmsg'); fm.className = 'msg'; fm.textContent = 'Searching your bag…';
+  $('findbtn').disabled = true;
+  await new Promise(r => setTimeout(r, 30));   // let the message paint before the synchronous search
+  try {
+    const res = findUpgrade(E, STATE, { onProgress: n => { fm.textContent = `Searching your bag… ${n} tried`; } });
+    renderUpgrade(res);
+  } catch (e) { fm.className = 'msg warn'; fm.textContent = 'Search failed: ' + e.message; }
+  finally { $('findbtn').disabled = false; }
+}
+function renderUpgrade(res) {
+  const fm = $('findmsg');
+  const changes = Object.entries(res.changed);
+  if (!changes.length) { fm.className = 'msg ok'; fm.textContent = 'Your equipped gear is already the best in your bag for this build (no policy upgrade found).'; $('upgrade').classList.add('hide'); return; }
+  fm.textContent = '';
+  const code = equipCode(STATE, res.equipment);
+  const b = res.before, a = res.after;
+  const dRes = (k) => { const bv = b.resist[k], av = a.resist[k]; const d = av - bv; return `${av}%${d ? ` <span style="color:${d>0?'var(--ok)':'var(--warn)'}">(${d>0?'+':''}${d})</span>` : ''}`; };
+  const dStat = (label, bv, av, fmt) => { const f = fmt || (x => x); const d = av - bv; return `<div class="stat"><span class="l">${label}</span><span class="v">${f(av)} ${d ? `<span style="color:${d>0?'var(--ok)':'var(--warn)'};font-weight:400">(${d>0?'+':''}${f(Math.abs(d))})</span>` : ''}</span></div>`; };
+  $('upgrade').innerHTML = `
+    <h2 style="margin-top:18px">Suggested upgrades <span style="color:var(--ok);font-size:14px">+${res.gainPct}% overall</span></h2>
+    <p class="sub" style="color:var(--muted);font-size:13px">The 20% damage / 80% survival policy, scored on the game's own engine — the same rule the bot uses. Resist value stops at 55%.</p>
+    <div class="slots" style="margin-bottom:12px">${changes.map(([slot, it]) => `<div class="slot"><span class="sn">${slot.replace(/(\d)$/, ' $1')}</span><span class="si">→ ${esc(it.name)} <span class="rar ${esc(it.rarity||'common')}">${esc(it.rarity||'')}</span></span></div>`).join('')}</div>
+    <div class="grid">
+      ${dStat('Skill DPS', b.off, a.off, fmtBig)}
+      ${dStat('Life', b.hp, a.hp, fmtBig)}
+      ${dStat('Barrier', b.barrier, a.barrier, fmtBig)}
+      ${dStat('Armour', b.armor, a.armor, fmtBig)}
+    </div>
+    <div class="res">
+      ${[['fire','fire'],['cold','cold'],['lightning','lightning'],['chaos','chaos']].map(([c,k])=>`<div class="rchip ${c}${a.resist[k]<55?' low':''}"><div class="rv">${dRes(k)}</div><div class="rl">${c}</div></div>`).join('')}
+    </div>
+    <h2 style="margin-top:16px">Equip code</h2>
+    <p class="sub" style="color:var(--muted);font-size:13px">Paste into Hellruler (Hero &gt; a build &gt; From code) and take the <b>gear</b> part to equip these.</p>
+    <textarea class="codebox" readonly style="width:100%;height:64px;background:var(--soot);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:8px;font:12px ui-monospace,Consolas,monospace">${esc(code)}</textarea>
+    <div class="btns"><button class="b" id="copyup">Copy equip code</button></div>`;
+  $('upgrade').classList.remove('hide');
+  $('copyup').onclick = () => navigator.clipboard?.writeText(code);
+}
+</script>
+</body>
+</html>

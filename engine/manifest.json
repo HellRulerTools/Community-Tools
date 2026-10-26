@@ -1,0 +1,21 @@
+{
+ "build": "play-D4sKIYkc",
+ "treeId": "hellruler-4.8",
+ "chunks": [
+  "fmt-jgZEuLA3.js",
+  "i18n-ye11TZQ8.js",
+  "legacyIds-C6PEohJK.js",
+  "playerName-DX7P2Ui6.js",
+  "preload-helper-Czpn1I53.js",
+  "rolldown-runtime-hePW80VL.js",
+  "settings-CfzDbr4n.js",
+  "skillNumbers-Dk9M06ig.js",
+  "supportSim.worker-BLPK3lO4.js",
+  "ui.de-BXfc_tW2.js",
+  "ui.en-C0X-CEs6.js",
+  "ui.es-BK-bzWtQ.js",
+  "ui.ru-CEDYgZPH.js"
+ ],
+ "bytes": 4517845,
+ "generatedAt": "2026-10-26T11:40:17.308Z"
+}
