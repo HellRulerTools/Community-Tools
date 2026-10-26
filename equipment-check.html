@@ -58,17 +58,27 @@
 
 <div class="wrap">
   <div class="panel" id="loadpanel">
-    <h2>Load your character</h2>
-    <p class="sub">Capture your live character and bag from the game page with the bookmarklet, then paste it here.
-      This stays in your browser. (A build code sets the tree &amp; skills; the capture provides your actual gear and bag.)</p>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 8px">
-      <b>1.</b> Drag this to your bookmarks bar: <a class="bm" id="bmlink" href="#">Grab Hellruler bag</a>
-      &nbsp; <b>2.</b> Open the game, click the bookmark, come back and paste below.
-    </p>
-    <textarea id="statebox" placeholder='Paste the captured data (or a HELLRULER1:… build code to preview tree + skills only)'></textarea>
+    <h2>1 · Paste a build code</h2>
+    <p class="sub">Paste a <b>HELLRULER1:</b> code. A code from the <b>game</b> (Hero &gt; a build &gt; To code) carries
+      your whole character — tree, skills and the gear you're wearing — so it shows a full stat sheet straight away. A
+      <b>Build Planner</b> code sets the tree &amp; skills; add your bag below to dress it in gear.</p>
+    <textarea id="buildbox" placeholder="HELLRULER1:…"></textarea>
     <div class="btns">
-      <button class="b primary" id="loadbtn">Check this character</button>
+      <button class="b primary" id="buildbtn">Check this build</button>
       <button class="b" id="samplebtn">Load a sample</button>
+    </div>
+    <div class="msg" id="buildmsg"></div>
+
+    <h2 style="margin-top:20px">2 · Add your bag <span style="color:var(--muted);font-weight:400;font-size:13px">— to find upgrades</span></h2>
+    <p class="sub">Capture your live gear and bag from the game page with the bookmarklet. This supplies the items the
+      upgrade search looks through (and can dress a planner build that has no gear). Everything stays in your browser.</p>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 8px">
+      <b>a.</b> Drag this to your bookmarks bar: <a class="bm" id="bmlink" href="#">Grab Hellruler bag</a>
+      &nbsp; <b>b.</b> Open the game, click the bookmark, come back and paste below.
+    </p>
+    <textarea id="statebox" placeholder="Paste the captured bag data from the bookmarklet"></textarea>
+    <div class="btns">
+      <button class="b" id="loadbtn">Load bag</button>
     </div>
     <div class="msg" id="loadmsg"></div>
   </div>
@@ -142,27 +152,87 @@ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.write
 }catch(e){alert('Capture failed: '+e.message);}})();`;
 $('bmlink').href = 'javascript:' + encodeURIComponent(BM);
 
-$('loadbtn').onclick = () => load($('statebox').value);
+$('buildbtn').onclick = () => setBuild($('buildbox').value);
+$('loadbtn').onclick = () => addBag($('statebox').value);
 $('recheck').onclick = () => { $('sheetpanel').classList.add('hide'); $('loadpanel').classList.remove('hide'); $('upgrade').classList.add('hide'); };
 $('findbtn').onclick = () => findUpgrades();
 $('samplebtn').onclick = async () => {
-  try { const s = await fetch('equipment-check.sample.json').then(r => r.ok ? r.json() : null); if (s) { $('statebox').value = JSON.stringify(s); load(s); } else { msg('No sample bundled.', true); } }
-  catch { msg('No sample bundled.', true); }
+  try { const s = await fetch('equipment-check.sample.json').then(r => r.ok ? r.json() : null); if (s) { STATE = s; renderAndShow(); } else { bmsg('No sample bundled.', true); } }
+  catch { bmsg('No sample bundled.', true); }
 };
 function msg(t, warn) { $('loadmsg').className = 'msg' + (warn ? ' warn' : ' ok'); $('loadmsg').textContent = t; }
+function bmsg(t, warn) { $('buildmsg').className = 'msg' + (warn ? ' warn' : ' ok'); $('buildmsg').textContent = t; }
 
-let STATE = null;
-function load(input) {
+const unb64u = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
+const RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'legendary', 'ancient', 'unique'];
+// reconstruct an `equipment` object from a code's `p` (pieces) array — the reverse of equipCode():
+//   piece = [slot, uid, name, base, rarityIndex, quality, ilvl, power, prismatic, implicit[[id,val]], affixes[[id,val]]]
+function equipmentFromPieces(pieces) {
+  const eq = {};
+  for (const p of (pieces || [])) {
+    const [slot, uid, name, base, rarI, quality, ilvl, power, prismatic, implicit, affixes] = p;
+    eq[slot] = { uid, name, base, slot: slotFamily(slot), rarity: RARITIES[rarI] || 'common', quality: quality || 0,
+      ilvl: ilvl || 0, depth: ilvl || 0, power: power || undefined, prismatic: !!prismatic,
+      implicit: (implicit || []).map(([id, value]) => ({ id, value })),
+      affixes: (affixes || []).map(([id, value]) => ({ id, value })) };
+  }
+  return eq;
+}
+// the item .slot family the engine expects (ring1 -> 'ring', mainhand -> 'weapon', etc.)
+function slotFamily(slot) {
+  if (slot === 'mainhand' || slot === 'offhand') return 'weapon';
+  if (slot === 'ring1' || slot === 'ring2') return 'ring';
+  if (slot === 'trinket1' || slot === 'trinket2') return 'trinket';
+  if (slot === 'lifeFlask' || slot === 'manaFlask') return slot;
+  if (slot === 'elixir1' || slot === 'elixir2') return 'elixir';
+  return slot;
+}
+
+let STATE = null;   // the working character: { name, equipment, inventory, hero, maxDepth, ... }
+// STEP 1 — a build code. Game codes carry gear (pieces) + hero; planner codes carry hero only.
+function setBuild(text) {
+  if (!E) { bmsg('Engine still loading — try again in a moment.', true); return; }
+  const t = (text || '').trim();
+  if (!t) { bmsg('Paste a build code first.', true); return; }
+  if (!t.startsWith(PREFIX)) { bmsg('That is not a build code (must start with HELLRULER1:).', true); return; }
+  let obj;
+  try { obj = JSON.parse(unb64u(t.slice(PREFIX.length))); } catch (e) { bmsg('Could not read that code.', true); return; }
+  if (!obj || obj.v !== 1 || !obj.h) { bmsg('That code is not a v1 build.', true); return; }
+  const hero = obj.h;
+  const equipment = equipmentFromPieces(obj.p);
+  const hasGear = Object.keys(equipment).length > 0;
+  // carry any bag we already captured so find-upgrade still works after re-setting the build
+  const inventory = (STATE && STATE.inventory) || [];
+  STATE = { name: obj.n || (STATE && STATE.name) || 'Build', equipment, inventory, hero,
+    maxDepth: (STATE && STATE.maxDepth) || hero.depth || 10000, depth: (STATE && STATE.depth), stance: (STATE && STATE.stance), fires: (STATE && STATE.fires), nextUid: (STATE && STATE.nextUid) };
+  if (hasGear) { bmsg('Build + gear loaded ✓', false); renderAndShow(); }
+  else { bmsg('Build loaded (tree + skills, no gear). Add your bag below to see gear stats and find upgrades.', false); }
+}
+// STEP 2 — the captured bag. Supplies inventory for upgrades, and equips the captured gear onto the
+// current build if that build had none (a planner code).
+function addBag(input) {
   if (!E) { msg('Engine still loading — try again in a moment.', true); return; }
-  let state;
-  try {
-    const t = typeof input === 'string' ? input.trim() : input;
-    if (typeof t === 'string' && t.startsWith(PREFIX)) { msg('That is a build code (tree + skills only). Equipment Check needs a captured character to show gear stats — use the bookmarklet.', true); return; }
-    state = typeof t === 'string' ? JSON.parse(t) : t;
-  } catch (e) { msg('Could not read that — paste the captured data from the bookmarklet.', true); return; }
-  if (!state || !state.equipment || !state.hero) { msg('That data has no equipment/hero. Capture again on the game screen.', true); return; }
-  STATE = state;
-  try { renderSheet(state); msg('', false); $('loadpanel').classList.add('hide'); $('sheetpanel').classList.remove('hide'); }
+  let cap;
+  try { const t = (input || '').trim(); if (t.startsWith(PREFIX)) { msg('That is a build code — paste it in step 1. This box takes the captured bag from the bookmarklet.', true); return; } cap = JSON.parse(t); }
+  catch (e) { msg('Could not read that — paste the captured bag from the bookmarklet.', true); return; }
+  if (!cap || !cap.equipment || !cap.inventory) { msg('That data has no equipment/inventory. Capture again on the game screen.', true); return; }
+  if (!STATE) {
+    // no build set first: use the captured character wholesale (its own tree/skills + gear)
+    STATE = cap;
+  } else {
+    STATE.inventory = cap.inventory;
+    if (cap.maxDepth) STATE.maxDepth = cap.maxDepth;
+    if (cap.stance) STATE.stance = cap.stance;
+    if (cap.fires != null) STATE.fires = cap.fires;
+    if (cap.nextUid) STATE.nextUid = cap.nextUid;
+    // if the build had no gear, equip the captured gear onto it
+    if (!Object.keys(STATE.equipment || {}).length) STATE.equipment = cap.equipment;
+  }
+  msg('Bag added ✓ (' + (cap.inventory || []).length + ' items)', false);
+  renderAndShow();
+}
+function renderAndShow() {
+  try { renderSheet(STATE); msg('', false); bmsg('', false); $('loadpanel').classList.add('hide'); $('sheetpanel').classList.remove('hide'); }
   catch (e) { msg('Could not compute stats: ' + e.message, true); }
 }
 
