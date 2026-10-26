@@ -46,6 +46,10 @@
   .rchip.low { border-color: var(--warn); } .rchip.low .rv { color: var(--warn); }
   .slots { margin-top: 6px; } .slot { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid #2c221d; padding: 5px 0; font-size: 13px; }
   .slot .sn { color: var(--muted); text-transform: capitalize; } .slot .si { color: var(--bone); text-align: right; }
+  .buildloaded { background: var(--soot2); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; }
+  .bl-row { display: flex; gap: 12px; padding: 3px 0; font-size: 13px; }
+  .bl-row .bl-k { color: var(--ember); font-weight: 600; min-width: 92px; }
+  .bl-row .bl-v { color: var(--text); }
   .slot .si .rar { font-size: 11px; }
   .rar.legendary { color: #e8a33d; } .rar.unique { color: #c86a3a; } .rar.mythic { color: #9b5fa8; } .rar.ancient { color: #4fa3c0; } .rar.rare { color: #d7b23a; } .rar.uncommon { color: #5c9a55; } .rar.common { color: var(--muted); }
 </style>
@@ -87,7 +91,12 @@
     <div class="hero-head">
       <span class="nm" id="heroname"></span>
       <span class="cls" id="heroclass"></span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">depth
+        <input type="number" id="depth" min="1" max="100000" step="100" style="width:90px;background:var(--soot);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 6px;font:13px var(--sans)">
+      </span>
     </div>
+    <p class="sub" style="color:var(--muted);font-size:12px;margin:2px 0 10px">Resists carry the game's depth penalty, so set your depth to match the in-game sheet. (A build code doesn't include depth; a captured bag does.)</p>
+    <div id="buildloaded" class="buildloaded"></div>
     <div class="sheet">
       <div>
         <div class="big" id="dps"></div>
@@ -167,14 +176,31 @@ const unb64u = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(
 const RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'legendary', 'ancient', 'unique'];
 // reconstruct an `equipment` object from a code's `p` (pieces) array — the reverse of equipCode():
 //   piece = [slot, uid, name, base, rarityIndex, quality, ilvl, power, prismatic, implicit[[id,val]], affixes[[id,val]]]
+// A BUILD CODE omits each item's base defence (armour/barrier the base type gives). The kit builder needs
+// it, so we recompute it from base + ilvl + quality with the engine's own li()/ui() — verified exact to
+// the game's values. Without this, armour/barrier read far too low.
 function equipmentFromPieces(pieces) {
   const eq = {};
   for (const p of (pieces || [])) {
     const [slot, uid, name, base, rarI, quality, ilvl, power, prismatic, implicit, affixes] = p;
-    eq[slot] = { uid, name, base, slot: slotFamily(slot), rarity: RARITIES[rarI] || 'common', quality: quality || 0,
+    const fam = slotFamily(slot);
+    const it = { uid, name, base, slot: fam, rarity: RARITIES[rarI] || 'common', quality: quality || 0,
       ilvl: ilvl || 0, depth: ilvl || 0, power: power || undefined, prismatic: !!prismatic,
       implicit: (implicit || []).map(([id, value]) => ({ id, value })),
       affixes: (affixes || []).map(([id, value]) => ({ id, value })) };
+    // recompute base defence (armour/barrier/dodge) the game recomputes on import
+    if (E && E.baseOf && E.baseDef) {
+      try {
+        const baseObj = E.baseOf(fam, base);
+        if (baseObj) {
+          const bd = E.baseDef(baseObj, it.ilvl, it.quality);
+          if (bd && bd.id && bd.value) it.baseDefense = bd;
+          const bd2 = E.baseDef2 && E.baseDef2(baseObj, it.ilvl, it.quality);
+          if (bd2 && bd2.id && bd2.value) it.baseDefense2 = bd2;
+        }
+      } catch {}
+    }
+    eq[slot] = it;
   }
   return eq;
 }
@@ -236,13 +262,18 @@ function renderAndShow() {
   catch (e) { msg('Could not compute stats: ' + e.message, true); }
 }
 
+const START = { reaver: 'Warrior', sellsword: 'Fencer', dancer: 'Archer', stormcaller: 'Assassin', pyromancer: 'Mage', bulwark: 'Paladin', frostwitch: 'Wanderer' };
+$('depth').oninput = () => { if (STATE) { STATE.maxDepth = Math.max(1, +$('depth').value || 1); renderSheet(STATE); } };
 function renderSheet(state) {
+  // depth drives the resist penalty; keep the input and state in sync
+  if (document.activeElement !== $('depth')) $('depth').value = state.maxDepth || 10000;
+  state.maxDepth = Math.max(1, +$('depth').value || state.maxDepth || 10000);
   const kit = E.kitOf(state);
   const k = kit(state.equipment);
   const s = k.stats;
-  const START = { reaver: 'Warrior', sellsword: 'Fencer', dancer: 'Archer', stormcaller: 'Assassin', pyromancer: 'Mage', bulwark: 'Paladin', frostwitch: 'Wanderer' };
   $('heroname').textContent = state.name || 'Your character';
-  $('heroclass').textContent = `${START[state.hero.start] || state.hero.start || ''}${state.maxDepth ? ' · depth ' + state.maxDepth : ''}${state.stance ? ' · ' + state.stance : ''}`;
+  $('heroclass').textContent = `${START[state.hero.start] || state.hero.start || ''}${state.stance ? ' · ' + state.stance : ''}`;
+  renderBuildLoaded(state, k);
 
   // offence
   let off = 0; try { off = E.evalLoadout(state.equipment, { maxDepth: state.maxDepth, kit }).off || 0; } catch {}
@@ -276,6 +307,25 @@ function renderSheet(state) {
   }).join('');
 }
 const row = (l, v) => `<div class="stat"><span class="l">${esc(l)}</span><span class="v">${esc(v)}</span></div>`;
+
+// what tree/skills/altar the checks are using — so you can confirm the build being tested
+function renderBuildLoaded(state, k) {
+  const h = state.hero || {};
+  const gemName = id => { if (!id) return null; const r = (k.skills || []).find(x => x.gem && (x.gem.id === id)); return (r && r.gem.name) || id; };
+  // skills: the active groups (gem + its supports), auras separately
+  const groups = (h.groups || []).map(g => g.gem).filter(Boolean);
+  const skillLine = groups.length
+    ? groups.map(id => esc(gemName(id))).join(', ')
+    : '<span style="color:var(--muted)">none</span>';
+  const passCount = (h.passives || []).filter(Boolean).length;
+  const mastCount = Object.keys(h.masteries || {}).length;
+  const asc = h.ascendancy ? `${esc(h.ascendancy)}${(h.ascendNodes || []).length ? ` (${(h.ascendNodes || []).length} nodes)` : ''}` : '—';
+  const treeNote = h.passivesTable && h.passivesTable !== E.treeId ? ` <span style="color:var(--warn)">· code tree ${esc(h.passivesTable)} ≠ engine ${esc(E.treeId)}</span>` : '';
+  $('buildloaded').innerHTML = `
+    <div class="bl-row"><span class="bl-k">Skills</span><span class="bl-v">${skillLine}</span></div>
+    <div class="bl-row"><span class="bl-k">Ascendancy</span><span class="bl-v">${asc}</span></div>
+    <div class="bl-row"><span class="bl-k">Tree</span><span class="bl-v">${passCount} passives · ${mastCount} masteries${treeNote}</span></div>`;
+}
 
 // ---- find upgrade: fight-free policy search over the bag ----
 const PREFIX2 = 'HELLRULER1:';
