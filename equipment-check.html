@@ -46,6 +46,13 @@
   .rchip.low { border-color: var(--warn); } .rchip.low .rv { color: var(--warn); }
   .slots { margin-top: 6px; } .slot { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid #2c221d; padding: 5px 0; font-size: 13px; }
   .slot .sn { color: var(--muted); text-transform: capitalize; } .slot .si { color: var(--bone); text-align: right; }
+  .steps { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-direction: column; gap: 8px; }
+  .steps li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
+  .steps .num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); color: var(--ember); font: 600 12px var(--sans); display: grid; place-items: center; }
+  .verdict { font: 600 22px var(--serif); display: flex; align-items: center; gap: 10px; }
+  .verdict.optimal { color: var(--ok); } .verdict.improve { color: var(--ember); }
+  .verdict .mk { font-size: 24px; }
+  .verdict .sub2 { font: 400 14px var(--sans); color: var(--muted); }
   .buildloaded { background: var(--soot2); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; }
   .bl-row { display: flex; gap: 12px; padding: 3px 0; font-size: 13px; }
   .bl-row .bl-k { color: var(--ember); font-weight: 600; min-width: 92px; }
@@ -62,45 +69,35 @@
 
 <div class="wrap">
   <div class="panel" id="loadpanel">
-    <h2>1 · Paste a build code</h2>
-    <p class="sub">Paste a <b>HELLRULER1:</b> code. A code from the <b>game</b> (Hero &gt; a build &gt; To code) carries
-      your whole character — tree, skills and the gear you're wearing — so it shows a full stat sheet straight away. A
-      <b>Build Planner</b> code sets the tree &amp; skills; add your bag below to dress it in gear.</p>
-    <textarea id="buildbox" placeholder="HELLRULER1:…"></textarea>
+    <h2>Bring your character in</h2>
+    <p class="sub">This checks your <b>live</b> character — your real gear, bag, tree, skills and level — and tells you
+      whether it's optimal, with the best gear in your bag if not. Everything stays in your browser; nothing is uploaded.</p>
+    <ol class="steps">
+      <li><span class="num">1</span> Drag this to your bookmarks bar, once: <a class="bm" id="bmlink" href="#">Grab my Hellruler character</a></li>
+      <li><span class="num">2</span> Open <b>Hellruler</b>, click the bookmark on the play screen, then come back here.</li>
+      <li><span class="num">3</span> Paste below — the check runs automatically.</li>
+    </ol>
+    <textarea id="statebox" placeholder="Paste your captured character here"></textarea>
     <div class="btns">
-      <button class="b primary" id="buildbtn">Check this build</button>
-      <button class="b" id="samplebtn">Load a sample</button>
-    </div>
-    <div class="msg" id="buildmsg"></div>
-
-    <h2 style="margin-top:20px">2 · Add your bag <span style="color:var(--muted);font-weight:400;font-size:13px">— to find upgrades</span></h2>
-    <p class="sub">Capture your live gear and bag from the game page with the bookmarklet. This supplies the items the
-      upgrade search looks through (and can dress a planner build that has no gear). Everything stays in your browser.</p>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 8px">
-      <b>a.</b> Drag this to your bookmarks bar: <a class="bm" id="bmlink" href="#">Grab Hellruler bag</a>
-      &nbsp; <b>b.</b> Open the game, click the bookmark, come back and paste below.
-    </p>
-    <textarea id="statebox" placeholder="Paste the captured bag data from the bookmarklet"></textarea>
-    <div class="btns">
-      <button class="b" id="loadbtn">Load bag</button>
+      <button class="b primary" id="loadbtn">Check my character</button>
+      <button class="b" id="samplebtn">See a sample</button>
     </div>
     <div class="msg" id="loadmsg"></div>
+  </div>
+
+  <!-- the verdict leads: optimal or not, decided the moment the character loads -->
+  <div class="panel hide" id="verdictpanel">
+    <div class="verdict" id="verdict"></div>
+    <div id="findmsg" class="msg"></div>
+    <div id="upgrade" class="hide"></div>
   </div>
 
   <div class="panel hide" id="sheetpanel">
     <div class="hero-head">
       <span class="nm" id="heroname"></span>
       <span class="cls" id="heroclass"></span>
-      <span style="margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted)">
-        <label style="display:flex;align-items:center;gap:6px;margin:0">level
-          <input type="number" id="level" min="1" max="100" step="1" style="width:64px;background:var(--soot);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 6px;font:13px var(--sans)">
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;margin:0">depth
-          <input type="number" id="depth" min="1" max="100000" step="100" style="width:90px;background:var(--soot);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 6px;font:13px var(--sans)">
-        </label>
-      </span>
+      <button class="b" id="recheck" style="margin-left:auto">Check another character</button>
     </div>
-    <p class="sub" style="color:var(--muted);font-size:12px;margin:2px 0 10px">Level and depth both change your resists (level adds elemental resist, depth takes it away). A build code carries neither, so set them to match the in-game sheet; a captured bag fills them in for you.</p>
     <div id="buildloaded" class="buildloaded"></div>
     <div class="sheet">
       <div>
@@ -115,12 +112,6 @@
         <div class="slots" id="slots"></div>
       </div>
     </div>
-    <div class="btns" style="margin-top:16px">
-      <button class="b primary" id="findbtn">Find upgrades in my bag</button>
-      <button class="b" id="recheck">Load a different character</button>
-    </div>
-    <div class="msg" id="findmsg"></div>
-    <div id="upgrade" class="hide"></div>
   </div>
 </div>
 
@@ -166,143 +157,46 @@ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.write
 }catch(e){alert('Capture failed: '+e.message);}})();`;
 $('bmlink').href = 'javascript:' + encodeURIComponent(BM);
 
-$('buildbtn').onclick = () => setBuild($('buildbox').value);
-$('loadbtn').onclick = () => addBag($('statebox').value);
-$('recheck').onclick = () => { $('sheetpanel').classList.add('hide'); $('loadpanel').classList.remove('hide'); $('upgrade').classList.add('hide'); };
-$('findbtn').onclick = () => findUpgrades();
+$('loadbtn').onclick = () => load($('statebox').value);
+$('statebox').addEventListener('paste', () => setTimeout(() => load($('statebox').value), 40));   // auto-run on paste
+$('recheck').onclick = () => { $('sheetpanel').classList.add('hide'); $('verdictpanel').classList.add('hide'); $('loadpanel').classList.remove('hide'); $('statebox').value = ''; };
 $('samplebtn').onclick = async () => {
-  try { const s = await fetch('equipment-check.sample.json').then(r => r.ok ? r.json() : null); if (s) { STATE = s; renderAndShow(); } else { bmsg('No sample bundled.', true); } }
-  catch { bmsg('No sample bundled.', true); }
+  try { const s = await fetch('equipment-check.sample.json').then(r => r.ok ? r.json() : null); if (s) load(s); else msg('No sample bundled.', true); }
+  catch { msg('No sample bundled.', true); }
 };
 function msg(t, warn) { $('loadmsg').className = 'msg' + (warn ? ' warn' : ' ok'); $('loadmsg').textContent = t; }
-function bmsg(t, warn) { $('buildmsg').className = 'msg' + (warn ? ' warn' : ' ok'); $('buildmsg').textContent = t; }
 
-const unb64u = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
-const RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'legendary', 'ancient', 'unique'];
-// reconstruct an `equipment` object from a code's `p` (pieces) array — the reverse of equipCode():
-//   piece = [slot, uid, name, base, rarityIndex, quality, ilvl, power, prismatic, implicit[[id,val]], affixes[[id,val]]]
-// A BUILD CODE omits each item's base defence (armour/barrier the base type gives). The kit builder needs
-// it, so we recompute it from base + ilvl + quality with the engine's own li()/ui() — verified exact to
-// the game's values. Without this, armour/barrier read far too low.
-function equipmentFromPieces(pieces) {
-  const eq = {};
-  for (const p of (pieces || [])) {
-    const [slot, uid, name, base, rarI, quality, ilvl, power, prismatic, implicit, affixes] = p;
-    const fam = slotFamily(slot);
-    const it = { uid, name, base, slot: fam, rarity: RARITIES[rarI] || 'common', quality: quality || 0,
-      ilvl: ilvl || 0, depth: ilvl || 0, power: power || undefined, prismatic: !!prismatic,
-      implicit: (implicit || []).map(([id, value]) => ({ id, value })),
-      affixes: (affixes || []).map(([id, value]) => ({ id, value })) };
-    // recompute base defence (armour/barrier/dodge) the game recomputes on import
-    if (E && E.baseOf && E.baseDef) {
-      try {
-        const baseObj = E.baseOf(fam, base);
-        if (baseObj) {
-          const bd = E.baseDef(baseObj, it.ilvl, it.quality);
-          if (bd && bd.id && bd.value) it.baseDefense = bd;
-          const bd2 = E.baseDef2 && E.baseDef2(baseObj, it.ilvl, it.quality);
-          if (bd2 && bd2.id && bd2.value) it.baseDefense2 = bd2;
-        }
-      } catch {}
-    }
-    eq[slot] = it;
-  }
-  return eq;
-}
-// the item .slot family the engine expects (ring1 -> 'ring', mainhand -> 'weapon', etc.)
-function slotFamily(slot) {
-  if (slot === 'mainhand' || slot === 'offhand') return 'weapon';
-  if (slot === 'ring1' || slot === 'ring2') return 'ring';
-  if (slot === 'trinket1' || slot === 'trinket2') return 'trinket';
-  if (slot === 'lifeFlask' || slot === 'manaFlask') return slot;
-  if (slot === 'elixir1' || slot === 'elixir2') return 'elixir';
-  return slot;
-}
-
-let STATE = null;   // the working character: { name, equipment, inventory, hero, maxDepth, ... }
-// STEP 1 — a build code. Game codes carry gear (pieces) + hero; planner codes carry hero only.
-function setBuild(text) {
-  if (!E) { bmsg('Engine still loading — try again in a moment.', true); return; }
-  const t = (text || '').trim();
-  if (!t) { bmsg('Paste a build code first.', true); return; }
-  if (!t.startsWith(PREFIX)) { bmsg('That is not a build code (must start with HELLRULER1:).', true); return; }
-  let obj;
-  try { obj = JSON.parse(unb64u(t.slice(PREFIX.length))); } catch (e) { bmsg('Could not read that code.', true); return; }
-  if (!obj || obj.v !== 1 || !obj.h) { bmsg('That code is not a v1 build.', true); return; }
-  const hero = obj.h;
-  const equipment = equipmentFromPieces(obj.p);
-  const hasGear = Object.keys(equipment).length > 0;
-  // carry any bag we already captured so find-upgrade still works after re-setting the build
-  const inventory = (STATE && STATE.inventory) || [];
-  STATE = { name: obj.n || (STATE && STATE.name) || 'Build', equipment, inventory, hero,
-    maxDepth: (STATE && STATE.maxDepth) || hero.depth || 10000, depth: (STATE && STATE.depth), stance: (STATE && STATE.stance), fires: (STATE && STATE.fires), nextUid: (STATE && STATE.nextUid) };
-  if (hasGear) { bmsg('Build + gear loaded ✓', false); renderAndShow(); }
-  else { bmsg('Build loaded (tree + skills, no gear). Add your bag below to see gear stats and find upgrades.', false); }
-}
-// STEP 2 — the captured bag. Supplies inventory for upgrades, and equips the captured gear onto the
-// current build if that build had none (a planner code).
-function addBag(input) {
+let STATE = null;   // the captured live character
+// One entry point: take the captured character, render the sheet, and immediately judge it.
+function load(input) {
   if (!E) { msg('Engine still loading — try again in a moment.', true); return; }
   let cap;
-  try { const t = (input || '').trim(); if (t.startsWith(PREFIX)) { msg('That is a build code — paste it in step 1. This box takes the captured bag from the bookmarklet.', true); return; } cap = JSON.parse(t); }
-  catch (e) { msg('Could not read that — paste the captured bag from the bookmarklet.', true); return; }
-  if (!cap || !cap.equipment || !cap.inventory) { msg('That data has no equipment/inventory. Capture again on the game screen.', true); return; }
-  if (!STATE) {
-    // no build set first: use the captured character wholesale (its own tree/skills + gear)
-    STATE = cap;
-  } else {
-    STATE.inventory = cap.inventory;
-    if (cap.maxDepth) STATE.maxDepth = cap.maxDepth;
-    if (cap.stance) STATE.stance = cap.stance;
-    if (cap.fires != null) STATE.fires = cap.fires;
-    if (cap.nextUid) STATE.nextUid = cap.nextUid;
-    // account/character fields the kit reads (level comes from heroExp). A real capture wins over defaults.
-    for (const k of ['heroExp', 'guildLevel', 'pets', 'entitlements', 'carriedMods', 'strayPassives', 'counters', 'seed'])
-      if (cap[k] != null) STATE[k] = cap[k];
-    if (cap.heroExp != null) delete STATE._level;   // use the captured level, not the input default
-    // if the build had no gear, equip the captured gear onto it
-    if (!Object.keys(STATE.equipment || {}).length) STATE.equipment = cap.equipment;
+  try { cap = typeof input === 'string' ? JSON.parse(input.trim()) : input; }
+  catch { msg('That didn\'t look right — capture with the bookmarklet on the game screen, then paste the whole thing.', true); return; }
+  if (!cap || !cap.equipment || !cap.inventory || !cap.hero) {
+    msg('That capture is missing gear, bag or character. Click the bookmarklet on the Hellruler play screen and paste again.', true); return;
   }
-  msg('Bag added ✓ (' + (cap.inventory || []).length + ' items)', false);
-  renderAndShow();
-}
-function renderAndShow() {
-  try { renderSheet(STATE); msg('', false); bmsg('', false); $('loadpanel').classList.add('hide'); $('sheetpanel').classList.remove('hide'); }
-  catch (e) { msg('Could not compute stats: ' + e.message, true); }
+  STATE = cap;
+  try {
+    renderSheet(STATE);
+    msg('', false);
+    $('loadpanel').classList.add('hide');
+    $('sheetpanel').classList.remove('hide');
+    $('verdictpanel').classList.remove('hide');
+    judge();                                   // run the upgrade check straight away — no button
+  } catch (e) { msg('Could not read that character: ' + e.message, true); }
 }
 
 const START = { reaver: 'Warrior', sellsword: 'Fencer', dancer: 'Archer', stormcaller: 'Assassin', pyromancer: 'Mage', bulwark: 'Paladin', frostwitch: 'Wanderer' };
-// The kit derives the hero's LEVEL from state.heroExp, and level feeds stats (it grants elemental resist and
-// tree points). Neither a build code nor a bare capture carries it, so without it the engine treats the
-// hero as level 1 and every elemental resist reads ~28 low. Convert a level to heroExp using the engine
-// itself (bisect until kit.level reaches it) so we never hardcode the game's XP curve.
-function expForLevel(state, level) {
-  const probe = exp => E.kitOf({ ...state, heroExp: exp })(state.equipment).level;
-  let lo = 0, hi = 1;
-  while (probe(hi) < level && hi < 1e18) hi *= 10;
-  for (let i = 0; i < 70 && hi - lo > 1; i++) { const mid = Math.floor((lo + hi) / 2); if (probe(mid) >= level) hi = mid; else lo = mid; }
-  return hi;
-}
 function levelOf(state) { return E.kitOf(state)(state.equipment).level; }
-function syncInputs(state) {
-  if (document.activeElement !== $('depth')) $('depth').value = state.maxDepth || 10000;
-  if (document.activeElement !== $('level')) $('level').value = state._level || (state.heroExp != null ? levelOf(state) : 100);
-}
-function applyInputs(state) {
-  state.maxDepth = Math.max(1, +$('depth').value || state.maxDepth || 10000);
-  const lv = Math.min(100, Math.max(1, +$('level').value || 100));
-  if (state._level !== lv || state.heroExp == null) { state._level = lv; state.heroExp = expForLevel(state, lv); }
-}
-$('depth').oninput = () => { if (STATE) renderSheet(STATE); };
-$('level').oninput = () => { if (STATE) renderSheet(STATE); };
 function renderSheet(state) {
-  syncInputs(state);
-  applyInputs(state);
+  // everything comes from the capture: level (from heroExp), depth (maxDepth), gear, tree, skills. No inputs.
   const kit = E.kitOf(state);
   const k = kit(state.equipment);
   const s = k.stats;
   $('heroname').textContent = state.name || 'Your character';
-  $('heroclass').textContent = `${START[state.hero.start] || state.hero.start || ''}${state.stance ? ' · ' + state.stance : ''}`;
+  const lvl = levelOf(state);
+  $('heroclass').textContent = `${START[state.hero.start] || state.hero.start || ''} · level ${lvl} · depth ${state.maxDepth || '?'}${state.stance ? ' · ' + state.stance : ''}`;
   renderBuildLoaded(state, k);
 
   // offence
@@ -375,29 +269,34 @@ function equipCode(state, equipment) {
   const hero = { start: h.start, ascendancy: h.ascendancy ?? null, ascendNodes: h.ascendNodes || [], passives: h.passives || [], passivesTable: h.passivesTable, masteries: h.masteries || {}, groups: (h.groups || []).map(g => ({ gem: g.gem ?? null, supports: (g.supports || []).slice(0, 5) })) };
   return PREFIX2 + b64u(JSON.stringify({ v: 1, n: (state.name || 'Upgraded') + ' gear', p: pieces, h: hero }));
 }
-async function findUpgrades() {
+// auto-run: the moment a character loads, judge whether it's optimal and show the result.
+async function judge() {
   if (!E || !STATE) return;
-  const fm = $('findmsg'); fm.className = 'msg'; fm.textContent = 'Searching your bag…';
-  $('findbtn').disabled = true;
-  await new Promise(r => setTimeout(r, 30));   // let the message paint before the synchronous search
+  $('verdict').className = 'verdict';
+  $('verdict').innerHTML = `<span class="mk">⏳</span> Checking your bag for upgrades…`;
+  $('upgrade').classList.add('hide');
+  await new Promise(r => setTimeout(r, 30));   // paint the "checking" line before the synchronous search
   try {
-    const res = findUpgrade(E, STATE, { onProgress: n => { fm.textContent = `Searching your bag… ${n} tried`; } });
+    const res = findUpgrade(E, STATE);
     renderUpgrade(res);
-  } catch (e) { fm.className = 'msg warn'; fm.textContent = 'Search failed: ' + e.message; }
-  finally { $('findbtn').disabled = false; }
+  } catch (e) { $('verdict').className = 'verdict'; $('verdict').innerHTML = `<span class="sub2">Couldn't run the upgrade check: ${esc(e.message)}</span>`; }
 }
 function renderUpgrade(res) {
-  const fm = $('findmsg');
   const changes = Object.entries(res.changed);
-  if (!changes.length) { fm.className = 'msg ok'; fm.textContent = 'Your equipped gear is already the best in your bag for this build (no policy upgrade found).'; $('upgrade').classList.add('hide'); return; }
-  fm.textContent = '';
+  if (!changes.length) {
+    $('verdict').className = 'verdict optimal';
+    $('verdict').innerHTML = `<span class="mk">✓</span> Your gear is optimal <span class="sub2">— nothing in your bag beats what you're wearing for this build.</span>`;
+    $('upgrade').classList.add('hide');
+    return;
+  }
+  $('verdict').className = 'verdict improve';
+  $('verdict').innerHTML = `<span class="mk">▲</span> ${changes.length} upgrade${changes.length>1?'s':''} found <span class="sub2">— about +${res.gainPct}% overall. Equip code below.</span>`;
   const code = equipCode(STATE, res.equipment);
   const b = res.before, a = res.after;
   const dRes = (k) => { const bv = b.resist[k], av = a.resist[k]; const d = av - bv; return `${av}%${d ? ` <span style="color:${d>0?'var(--ok)':'var(--warn)'}">(${d>0?'+':''}${d})</span>` : ''}`; };
   const dStat = (label, bv, av, fmt) => { const f = fmt || (x => x); const d = av - bv; return `<div class="stat"><span class="l">${label}</span><span class="v">${f(av)} ${d ? `<span style="color:${d>0?'var(--ok)':'var(--warn)'};font-weight:400">(${d>0?'+':''}${f(Math.abs(d))})</span>` : ''}</span></div>`; };
   $('upgrade').innerHTML = `
-    <h2 style="margin-top:18px">Suggested upgrades <span style="color:var(--ok);font-size:14px">+${res.gainPct}% overall</span></h2>
-    <p class="sub" style="color:var(--muted);font-size:13px">The 20% damage / 80% survival policy, scored on the game's own engine — the same rule the bot uses. Resist value stops at 55%.</p>
+    <p class="sub" style="color:var(--muted);font-size:13px;margin-top:10px">Scored on the game's own engine with a 20% damage / 80% survival rule (the same one the bot uses). Resist counts up to 55%.</p>
     <div class="slots" style="margin-bottom:12px">${changes.map(([slot, it]) => `<div class="slot"><span class="sn">${slot.replace(/(\d)$/, ' $1')}</span><span class="si">→ ${esc(it.name)} <span class="rar ${esc(it.rarity||'common')}">${esc(it.rarity||'')}</span></span></div>`).join('')}</div>
     <div class="grid">
       ${dStat('Skill DPS', b.off, a.off, fmtBig)}
