@@ -44,6 +44,19 @@
   .load textarea { width: 100%; height: 64px; background: var(--soot); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: 12px ui-monospace, Consolas, monospace; resize: vertical; margin-top: 6px; }
   .load .btns { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
 
+  /* trust / FAQ */
+  .trust { margin-top: 22px; text-align: left; border-top: 1px solid var(--line); padding-top: 14px; }
+  .trust-toggle { background: none; border: 0; color: var(--ember); font: 600 13px var(--sans); cursor: pointer; padding: 0; }
+  .trust-toggle:hover { color: var(--bone); }
+  .trust-body { margin-top: 12px; font-size: 13.5px; }
+  .trust-body p { color: var(--text); margin: 0 0 10px; }
+  .trust-body ul { margin: 0 0 10px; padding-left: 0; list-style: none; }
+  .trust-body li { position: relative; padding-left: 24px; margin: 5px 0; color: var(--text); }
+  .trust-ok li::before { content: "✓"; position: absolute; left: 0; color: var(--ok); font-weight: 700; }
+  .trust-no li::before { content: "✕"; position: absolute; left: 0; color: var(--warn); font-weight: 700; }
+  .trust-note { color: var(--muted); font-size: 12.5px; }
+  .trust-code { background: var(--soot); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; font: 11.5px/1.5 ui-monospace, Consolas, monospace; color: var(--text); white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto; margin: 8px 0; }
+
   /* reload popover */
   #reload { position: absolute; right: 16px; top: 52px; z-index: 30; width: min(440px, 92vw); background: var(--panel); border: 1px solid var(--line2); border-radius: 8px; padding: 14px 16px; box-shadow: 0 14px 40px rgba(0,0,0,0.5); }
   #reload p { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
@@ -158,6 +171,27 @@
     <button class="b" id="samplebtn">See a sample</button>
   </div>
   <div class="msg" id="loadmsg" style="margin-top:10px"></div>
+
+  <div class="trust">
+    <button class="trust-toggle" id="trustToggle" aria-expanded="false">Is this safe? What the bookmarklet does ▸</button>
+    <div class="trust-body hide" id="trustBody">
+      <p>Fair question — here's exactly what it does, and what it doesn't.</p>
+      <ul class="trust-ok">
+        <li>Reads the character data already loaded on the game page (your gear, bag, tree, skills, level, depth).</li>
+        <li>Copies a trimmed snapshot to your <b>clipboard</b>. You paste it here, and everything runs in your own browser.</li>
+      </ul>
+      <ul class="trust-no">
+        <li><b>No uploading.</b> It makes no network requests — nothing is sent to us or anyone. The data never leaves your browser.</li>
+        <li><b>No login details.</b> It never reads your cookies, password, session or account token — only the game state.</li>
+        <li><b>No changes to your game.</b> It only reads. It can't edit your character, spend anything, or act for you.</li>
+        <li><b>Nothing stored.</b> It runs once when you click it and keeps nothing.</li>
+      </ul>
+      <p class="trust-note">The only thing the snapshot contains is your character and bag — so don't paste it anywhere public. On this page it stays in memory and is gone when you close the tab.</p>
+      <button class="trust-toggle" id="codeToggle" aria-expanded="false" style="margin-top:10px">View the exact code it runs ▸</button>
+      <pre class="trust-code hide" id="codeView"></pre>
+      <p class="trust-note">This is the complete, unminified source. It's also readable in the bookmark link itself (right-click the button → Copy link) — nothing is hidden.</p>
+    </div>
+  </div>
 </div>
 
 <!-- ===== HERO SCREEN ===== -->
@@ -215,6 +249,19 @@ function done(){alert('Hellruler character copied ('+(keep.inventory||[]).length
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,function(){var t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();});}else{var t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();}
 }catch(e){alert('Capture failed: '+e.message);}})();`;
 $('bmlink').href = 'javascript:' + encodeURIComponent(BM);
+
+// transparency: show the exact readable source so anyone can verify the bookmarklet is harmless
+$('codeView').textContent = BM;
+function wireToggle(btnId, bodyId, labelShow, labelHide) {
+  const btn = $(btnId), body = $(bodyId);
+  btn.onclick = () => {
+    const open = body.classList.toggle('hide') === false;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = (open ? labelHide : labelShow);
+  };
+}
+wireToggle('trustToggle', 'trustBody', 'Is this safe? What the bookmarklet does ▸', 'Hide ▾');
+wireToggle('codeToggle', 'codeView', 'View the exact code it runs ▸', 'Hide the code ▾');
 
 function msg(id, t, warn) { const el = $(id); el.className = 'msg' + (warn ? ' warn' : ' ok'); el.textContent = t; }
 
