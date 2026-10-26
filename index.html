@@ -121,8 +121,8 @@
 <nav class="nav" aria-label="Primary">
   <a class="brand" href="#home"><span class="mk">◆</span> Shiftage Community Tools <span class="sub">for Hellruler</span></a>
   <a class="link" data-nav href="#home">Home</a>
-  <a class="link" data-nav href="#planner">Tree Planner</a>
-  <a class="link" data-nav href="#skills">Skill Planner</a>
+  <a class="link" data-nav href="#build">Build Planner</a>
+  <a class="link" data-nav href="#prestige">Prestige Planner</a>
 </nav>
 
 <!-- ===== HOME ===== -->
@@ -159,29 +159,20 @@
       <article class="tool live">
         <span class="status">Live</span>
         <span class="tag">Planner</span>
-        <h3>Tree Planner</h3>
-        <p>Plan your passive tree with the game's own node art, map the cheapest route to any node, pick your altar
-          ascendancy and notables, and lay out prestige steps. Share a build with a code.</p>
-        <a class="open" href="#planner">Open planner</a>
+        <h3>Build Planner</h3>
+        <p>Plan a whole character in one place — passive tree, skill groups, and altar ascendancy. Import a game build
+          code to load a build, export one to paste back in (full build or just the part you want), and generate a
+          clean, shareable image of your skills for Discord.</p>
+        <a class="open" href="#build">Open build planner</a>
       </article>
 
       <article class="tool live">
         <span class="status">Live</span>
         <span class="tag">Planner</span>
-        <h3>Skill Planner</h3>
-        <p>Browse every active rune and support, then build skill groups like in game — socket an active and add
-          supports, with only compatible runes offered at each socket.</p>
-        <a class="open" href="#skills">Open planner</a>
-      </article>
-
-      <article class="tool wip">
-        <span class="status">In progress</span>
-        <span class="tag">Import / Export</span>
-        <h3>Build Code Import/Export</h3>
-        <p>Paste a BUILD CODE to read exactly what it holds — gear, skill groups, tree and path — and build a fresh
-          code from your plan to paste back into the game. The engine for this already round-trips real codes; wiring it
-          into a page is next.</p>
-        <span class="open">In progress</span>
+        <h3>Prestige Planner</h3>
+        <p>Lay out your prestige tree — buy steps across every chain, see what each gives, and work out how many
+          prestige points a given depth cleared will pay.</p>
+        <a class="open" href="#prestige">Open prestige planner</a>
       </article>
 
       <article class="tool plan">
@@ -238,15 +229,18 @@
   'use strict';
   // the tool catalogue — add a tool here and it gets a page + nav automatically
   // bump VERSION whenever a tool file changes so the iframe fetches fresh instead of a cached copy
-  const VERSION = '2026-10-25c';
+  const VERSION = '2026-10-25d';
   const TOOLS = {
+    build: { name: 'Build Planner', file: 'build-planner.html' },
+    prestige: { name: 'Prestige Planner', file: 'prestige-planner.html' },
+    // old tools kept reachable; superseded by Build Planner
     planner: { name: 'Tree Planner', file: 'planner.html' },
     skills: { name: 'Skill Planner', file: 'skill-planner.html' },
   };
   const $ = id => document.getElementById(id);
   const home = $('page-home'), view = $('toolview'), frame = $('toolframe');
-  // count reflects live tools plus what's on the way, so the toolbox reads as growing
-  const liveCount = Object.keys(TOOLS).length;
+  // count reflects the live cards actually shown, so the toolbox reads as growing
+  const liveCount = document.querySelectorAll('.tool.live').length;
   $('toolcount').textContent = `${liveCount} live, more in progress`;
 
   let lastShown = null;   // 'home' | 'tool' — so we only reset scroll when actually leaving a tool
