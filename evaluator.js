@@ -155,6 +155,10 @@ export function findUpgrade(E, state, { pinned = [], onProgress = null } = {}) {
     for (const it of pool) {
       for (const slot of (TARGETS[it.slot] || [it.slot])) {
         if (!SLOTS.includes(slot) || pinnedSet.has(slot)) continue;
+        // never put an item into one slot when the SAME physical item is already worn in another
+        // (e.g. the ring in ring2 can't be cloned into ring1). An item only "moves" to the slot it vacates.
+        const wornElsewhere = SLOTS.some(sl => sl !== slot && best[sl] && best[sl].uid === it.uid);
+        if (wornElsewhere) continue;
         const eq = withItem(best, slot, it); if (!eq) continue;
         if (slot === 'mainhand' && !weaponOk(eq)) continue;   // never disable the main skill
         const sc = policyScore(eq); tried++;
@@ -164,11 +168,22 @@ export function findUpgrade(E, state, { pinned = [], onProgress = null } = {}) {
     }
   }
   const curR = ev.rate(state.equipment), bestR = ev.rate(best);
+  const before = { ...ev.statsOf(state.equipment), off: Math.round(curR?.off || 0) };
+  const after = { ...ev.statsOf(best), off: Math.round(bestR?.off || 0) };
+  // plain-language "why": what the whole swap set improved, in the policy's own terms
+  const reasons = [];
+  const dOff = after.off - before.off, dHp = after.hp - before.hp, dBar = after.barrier - before.barrier, dArm = after.armor - before.armor;
+  const curUnder = curR?.underResist || {}, bestUnder = bestR?.underResist || {};
+  const fixedRes = Object.keys(curUnder).filter(t => (bestUnder[t] ?? 55) > curUnder[t] + 1);
+  if (fixedRes.length) reasons.push(`raises under-capped ${fixedRes.join(', ')} resistance toward the 55% target`);
+  if (dOff > before.off * 0.01) reasons.push(`+${Math.round((dOff / Math.max(1, before.off)) * 100)}% skill damage`);
+  if (dHp > before.hp * 0.01) reasons.push(`more life`);
+  if (dBar > before.barrier * 0.01) reasons.push(`more barrier`);
+  if (dArm > before.armor * 0.01) reasons.push(`more armour`);
+  if (!reasons.length) reasons.push(`a better overall balance of damage and survival`);
   return {
     equipment: best, changed: picks,
     gainPct: Math.round((Math.exp(bestScore - startScore) - 1) * 1000) / 10,
-    before: { ...ev.statsOf(state.equipment), off: Math.round(curR?.off || 0) },
-    after: { ...ev.statsOf(best), off: Math.round(bestR?.off || 0) },
-    tried,
+    before, after, reasons, tried,
   };
 }

@@ -117,9 +117,10 @@
 
   /* verdict + reveal */
   .verdictbar { grid-column: 1 / -1; margin-top: 6px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .verdict { font: 600 20px var(--serif); display: flex; align-items: center; gap: 10px; text-align: center; }
+  .verdict { font: 600 20px var(--serif); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; text-align: center; max-width: 640px; }
   .verdict.optimal { color: var(--ok); } .verdict.improve { color: var(--ember); } .verdict .mk { font-size: 22px; }
   .verdict .sub2 { font: 400 14px var(--sans); color: var(--muted); }
+  .verdict .whyline { flex-basis: 100%; font: 400 13px var(--sans); color: var(--muted); margin-top: 4px; line-height: 1.5; }
   .revealed { grid-column: 1 / -1; }
   .exportcode { margin-top: 16px; }
   .exportcode textarea { width: 100%; height: 56px; background: var(--soot); color: var(--text); border: 1px solid var(--line2); border-radius: 4px; padding: 8px; font: 12px ui-monospace, Consolas, monospace; resize: vertical; }
@@ -322,9 +323,9 @@ function renderHero(state) {
 }
 
 function tileHtml(slot, it, side) {
-  if (!it) return `<div class="tile empty" data-slot="${slot}"><div class="ic">·</div><div class="tx"><div class="nm">Empty</div><div class="sl">${SLOT_LABEL[slot]}</div></div></div>`;
+  if (!it) return `<div class="tile empty" data-slot="${slot}"><div class="tx"><div class="nm">Empty</div><div class="sl">${SLOT_LABEL[slot]}</div></div></div>`;
   const rar = it.rarity || 'common';
-  return `<div class="tile rar-${esc(rar)}" data-slot="${slot}" tabindex="0"><div class="ic">${esc((it.name || '?')[0])}</div><div class="tx"><div class="nm">${esc(it.name)}</div><div class="sl">${SLOT_LABEL[slot]}</div></div></div>`;
+  return `<div class="tile rar-${esc(rar)}" data-slot="${slot}" tabindex="0"><div class="tx"><div class="sl">${SLOT_LABEL[slot]}</div><div class="nm">${esc(it.name)}</div></div></div>`;
 }
 function renderGear(colId, slots, state, side) {
   $(colId).innerHTML = slots.map(slot => tileHtml(slot, state.equipment[slot], side)).join('');
@@ -417,7 +418,9 @@ async function judge() {
     const n = Object.keys(UPGRADE.changed).length;
     if (!n) { $('verdict').className = 'verdict optimal'; $('verdict').innerHTML = `<span class="mk">✓</span> Your gear is optimal <span class="sub2">— nothing in your bag beats it for this build.</span>`; return; }
     $('verdict').className = 'verdict improve';
-    $('verdict').innerHTML = `<span class="mk">▲</span> ${n} upgrade${n > 1 ? 's' : ''} available <span class="sub2">— about +${UPGRADE.gainPct}% overall.</span>`;
+    const why = (UPGRADE.reasons || []).join(', ');
+    $('verdict').innerHTML = `<span class="mk">▲</span> ${n} upgrade${n > 1 ? 's' : ''} available <span class="sub2">— about +${UPGRADE.gainPct}% overall.</span>`
+      + (why ? `<div class="whyline">Found because it brings ${esc(why)}. Scored on the game's engine with a 20% damage / 80% survival rule; resistance counts up to 55%.</div>` : '');
     $('revealbtn').classList.remove('hide');
     $('revealbtn').textContent = `Reveal ${n} upgrade${n > 1 ? 's' : ''}`;
   } catch (e) { $('verdict').className = 'verdict'; $('verdict').innerHTML = `<span class="sub2">Couldn't run the check: ${esc(e.message)}</span>`; }
@@ -435,7 +438,7 @@ function reveal() {
     if (el) {
       const rar = it.rarity || 'common';
       el.className = `tile rar-${rar} swap`;
-      el.innerHTML = `<div class="ic">${esc((it.name || '?')[0])}</div><div class="tx"><div class="nm">${esc(it.name)}</div><div class="sl">${SLOT_LABEL[slot]}</div></div><span class="badge">NEW</span>`;
+      el.innerHTML = `<div class="tx"><div class="sl">${SLOT_LABEL[slot]}</div><div class="nm">${esc(it.name)}</div></div><span class="badge">NEW</span>`;
       const fullItem = after[slot];
       el.addEventListener('mouseenter', e => showTip(e, fullItem));
       el.addEventListener('mousemove', moveTip); el.addEventListener('mouseleave', hideTip);
