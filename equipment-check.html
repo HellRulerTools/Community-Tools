@@ -91,11 +91,16 @@
     <div class="hero-head">
       <span class="nm" id="heroname"></span>
       <span class="cls" id="heroclass"></span>
-      <span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">depth
-        <input type="number" id="depth" min="1" max="100000" step="100" style="width:90px;background:var(--soot);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 6px;font:13px var(--sans)">
+      <span style="margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted)">
+        <label style="display:flex;align-items:center;gap:6px;margin:0">level
+          <input type="number" id="level" min="1" max="100" step="1" style="width:64px;background:var(--soot);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 6px;font:13px var(--sans)">
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;margin:0">depth
+          <input type="number" id="depth" min="1" max="100000" step="100" style="width:90px;background:var(--soot);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 6px;font:13px var(--sans)">
+        </label>
       </span>
     </div>
-    <p class="sub" style="color:var(--muted);font-size:12px;margin:2px 0 10px">Resists carry the game's depth penalty, so set your depth to match the in-game sheet. (A build code doesn't include depth; a captured bag does.)</p>
+    <p class="sub" style="color:var(--muted);font-size:12px;margin:2px 0 10px">Level and depth both change your resists (level adds elemental resist, depth takes it away). A build code carries neither, so set them to match the in-game sheet; a captured bag fills them in for you.</p>
     <div id="buildloaded" class="buildloaded"></div>
     <div class="sheet">
       <div>
@@ -154,7 +159,7 @@ function ok(o){return o&&typeof o==='object'&&o.equipment&&o.inventory&&o.hero;}
 function find(){var r=froot();if(!r)return null;var seen=new Set(),q=[r],n=0;while(q.length&&n<20000){var f=q.shift();if(!f||seen.has(f)){continue;}seen.add(f);n++;var h=f.memoizedState,hops=0;while(h&&hops<40){var ms=h.memoizedState;if(ok(ms))return ms;if(ms&&typeof ms==='object'){for(var kk in ms){try{if(ok(ms[kk]))return ms[kk];}catch(e){}}}h=h.next;hops++;}if(ok(f.memoizedProps))return f.memoizedProps;if(f.child)q.push(f.child);if(f.sibling)q.push(f.sibling);}return null;}
 var s=find();
 if(!s){alert('Could not find the game state. Open Hellruler to the play screen, then click this again.');return;}
-var keep={name:s.name,equipment:s.equipment,inventory:s.inventory,hero:s.hero,maxDepth:s.maxDepth,depth:s.depth,stance:s.stance,fires:s.fires,nextUid:s.nextUid};
+var keep={name:s.name,equipment:s.equipment,inventory:s.inventory,hero:s.hero,maxDepth:s.maxDepth,depth:s.depth,stance:s.stance,fires:s.fires,nextUid:s.nextUid,heroExp:s.heroExp,guildLevel:s.guildLevel,pets:s.pets,entitlements:s.entitlements,carriedMods:s.carriedMods,strayPassives:s.strayPassives,counters:s.counters,seed:s.seed};
 var txt=JSON.stringify(keep);
 function done(){alert('Hellruler bag copied ('+(keep.inventory||[]).length+' items). Paste it into Equipment Check.');}
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,function(){var t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();});}else{var t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done();}
@@ -251,6 +256,10 @@ function addBag(input) {
     if (cap.stance) STATE.stance = cap.stance;
     if (cap.fires != null) STATE.fires = cap.fires;
     if (cap.nextUid) STATE.nextUid = cap.nextUid;
+    // account/character fields the kit reads (level comes from heroExp). A real capture wins over defaults.
+    for (const k of ['heroExp', 'guildLevel', 'pets', 'entitlements', 'carriedMods', 'strayPassives', 'counters', 'seed'])
+      if (cap[k] != null) STATE[k] = cap[k];
+    if (cap.heroExp != null) delete STATE._level;   // use the captured level, not the input default
     // if the build had no gear, equip the captured gear onto it
     if (!Object.keys(STATE.equipment || {}).length) STATE.equipment = cap.equipment;
   }
@@ -263,11 +272,32 @@ function renderAndShow() {
 }
 
 const START = { reaver: 'Warrior', sellsword: 'Fencer', dancer: 'Archer', stormcaller: 'Assassin', pyromancer: 'Mage', bulwark: 'Paladin', frostwitch: 'Wanderer' };
-$('depth').oninput = () => { if (STATE) { STATE.maxDepth = Math.max(1, +$('depth').value || 1); renderSheet(STATE); } };
-function renderSheet(state) {
-  // depth drives the resist penalty; keep the input and state in sync
+// The kit derives the hero's LEVEL from state.heroExp, and level feeds stats (it grants elemental resist and
+// tree points). Neither a build code nor a bare capture carries it, so without it the engine treats the
+// hero as level 1 and every elemental resist reads ~28 low. Convert a level to heroExp using the engine
+// itself (bisect until kit.level reaches it) so we never hardcode the game's XP curve.
+function expForLevel(state, level) {
+  const probe = exp => E.kitOf({ ...state, heroExp: exp })(state.equipment).level;
+  let lo = 0, hi = 1;
+  while (probe(hi) < level && hi < 1e18) hi *= 10;
+  for (let i = 0; i < 70 && hi - lo > 1; i++) { const mid = Math.floor((lo + hi) / 2); if (probe(mid) >= level) hi = mid; else lo = mid; }
+  return hi;
+}
+function levelOf(state) { return E.kitOf(state)(state.equipment).level; }
+function syncInputs(state) {
   if (document.activeElement !== $('depth')) $('depth').value = state.maxDepth || 10000;
+  if (document.activeElement !== $('level')) $('level').value = state._level || (state.heroExp != null ? levelOf(state) : 100);
+}
+function applyInputs(state) {
   state.maxDepth = Math.max(1, +$('depth').value || state.maxDepth || 10000);
+  const lv = Math.min(100, Math.max(1, +$('level').value || 100));
+  if (state._level !== lv || state.heroExp == null) { state._level = lv; state.heroExp = expForLevel(state, lv); }
+}
+$('depth').oninput = () => { if (STATE) renderSheet(STATE); };
+$('level').oninput = () => { if (STATE) renderSheet(STATE); };
+function renderSheet(state) {
+  syncInputs(state);
+  applyInputs(state);
   const kit = E.kitOf(state);
   const k = kit(state.equipment);
   const s = k.stats;
